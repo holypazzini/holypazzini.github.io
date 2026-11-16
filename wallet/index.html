@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0e1116">
+  <meta name="description" content="개인키 없이 비트코인 주소의 잔액과 거래를 보는 조회 전용 지갑">
+  <meta name="apple-mobile-web-app-title" content="조회 지갑">
+  <title>비트코인 조회 지갑</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./wallet.css">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://mempool.space https://blockstream.info https://api.upbit.com https://api.coingecko.com; base-uri 'none'; form-action 'none'">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="brand">비트코인</p>
+      <h1>조회 지갑</h1>
+      <p class="lede">가지고 있는 코인의 잔액과 거래만 봅니다. 키는 만들지 않습니다.</p>
+    </header>
+
+    <aside class="banner">
+      <p><strong>조회 전용.</strong> 개인키, 복구 문구(시드), WIF는 넣지 마세요. 이 페이지는 코인을 보내거나 거래에 서명하지 않습니다. 감시 목록은 이 브라우저에만 저장됩니다.</p>
+    </aside>
+
+    <noscript>
+      <p class="alert">잔액을 보려면 자바스크립트를 켜 주세요. 이 페이지는 개인키를 받지 않습니다.</p>
+    </noscript>
+
+    <div id="warnings"></div>
+    <p id="status" class="status" role="status"></p>
+
+    <section class="panel" id="summary" aria-live="polite"></section>
+    <section id="fees" aria-label="추천 수수료"></section>
+
+    <section>
+      <h2>주소 추가</h2>
+      <label for="watch-input">주소 또는 확장 공개키</label>
+      <textarea id="watch-input" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" data-lpignore="true" data-1p-ignore placeholder="bc1…, 3…, 1… 주소 또는 xpub / ypub / zpub"></textarea>
+      <label for="label-input">별명 (선택)</label>
+      <input id="label-input" type="text" maxlength="40" autocomplete="off" placeholder="예: 콜드월렛">
+      <button type="button" class="primary" id="add-btn">추가</button>
+      <p id="alert" class="alert" hidden></p>
+      <p class="hint muted">복구 문구는 넣지 마세요. 주소가 여러 개면 한 줄에 하나씩 넣습니다. bc1 지갑은 zpub, 3으로 시작하면 ypub, 1로 시작하면 xpub입니다.</p>
+    </section>
+
+    <section>
+      <h2 id="list-heading">감시 목록</h2>
+      <div id="list"></div>
+    </section>
+
+    <section>
+      <h2>최근 거래</h2>
+      <div id="txs"></div>
+    </section>
+
+    <section>
+      <h2>목록 관리</h2>
+      <label class="check" for="show-usd"><input id="show-usd" type="checkbox"> 달러(USD)도 보기</label>
+      <div class="row">
+        <button type="button" id="export-btn">목록 파일로 저장</button>
+        <button type="button" id="import-btn">목록 파일 불러오기</button>
+      </div>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+      <label class="check" for="import-replace"><input id="import-replace" type="checkbox"> 불러올 때 지금 목록을 지우고 바꿉니다</label>
+      <button type="button" class="danger" id="clear-btn">목록 모두 지우기</button>
+      <div id="clear-confirm" class="confirm" hidden>
+        <p>이 브라우저에 저장된 목록만 지웁니다. 코인은 지갑에 그대로 있습니다.</p>
+        <div class="row">
+          <button type="button" class="danger" id="clear-yes">지우기</button>
+          <button type="button" id="clear-no">취소</button>
+        </div>
+      </div>
+      <div id="corrupt-box" hidden>
+        <p class="muted">저장된 원본이 손상됐습니다.</p>
+        <div class="row">
+          <button type="button" id="export-raw">손상된 저장본 받기</button>
+          <button type="button" id="reset-corrupt">지우고 새로 시작</button>
+        </div>
+      </div>
+    </section>
+
+    <details class="help">
+      <summary>사용 방법</summary>
+      <ol>
+        <li>지갑 앱에서 받는 주소를 복사합니다. 지갑 전체를 보려면 확장 공개키를 복사합니다. bc1 지갑은 zpub, 3으로 시작하면 ypub, 1로 시작하면 xpub입니다.</li>
+        <li>복구 문구(시드)와 개인키는 복사하지 마세요. 여기 붙여넣어도 저장하지 않으며, 코인을 보내지도 않습니다.</li>
+        <li>위 칸에 붙여넣고 추가를 누릅니다. 잔액, 원화 가치, 최근 거래가 표시됩니다.</li>
+        <li>확장 공개키의 수신·거스름 주소는 이 기기 안에서만 계산합니다. 사용 기록이 없는 주소가 20개 연속이면 탐색을 멈춥니다.</li>
+        <li>목록은 이 브라우저에만 남습니다. 파일로 저장해 두면 다른 폰이나 테슬라 브라우저에서 다시 불러올 수 있습니다.</li>
+      </ol>
+    </details>
+
+    <footer class="foot">
+      <p>잔액과 거래를 볼 때 주소가 mempool.space로 전달됩니다. 연결이 안 되면 blockstream.info를 사용합니다. 시세 조회에는 주소가 들어가지 않습니다.</p>
+      <p>원화는 업비트 KRW-BTC를 먼저 보고, 실패하면 CoinGecko를 사용합니다. 달러는 CoinGecko입니다.</p>
+    </footer>
+  </main>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
